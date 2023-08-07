@@ -1,3 +1,366 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// please don't scroll down just compile it
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// i said stop
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// stop it
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// don't be a creep
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ok i'm giving up
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include <iostream> 
 #include <fstream>
 #include <sstream>
@@ -173,6 +536,7 @@ public:
 	Rover()
 	{
 	}
+	int id{};
 	int spawn_x{}, spawn_y{};
 	int newrandx{5}, newrandy{5};
 	int rows{}, cols{};
@@ -185,13 +549,38 @@ public:
 // TODO
 int distance_from_zone(Rover& rover)
 {
-	return 999;
+	int nearestDistance = std::numeric_limits<int>::max();
+	for (int x = 0; x < rover.map.size(); ++x) {
+		for (int y = 0; y < rover.map[0].size(); ++y) {
+			if (rover.map[y][x].type == 'F') {
+				int distance = abs(rover.pos_x - x) + abs(rover.pos_y - y);
+				if (distance < nearestDistance) {
+					nearestDistance = distance;
+				}
+			}
+		}
+	}
+	std::cout << "dist: " << nearestDistance << "\n";
+	return nearestDistance;
 }
 
 // TODO
-bool player_visible(Rover& rover)
+std::pair<int, int> player_visible(Rover& rover)
 {
-	return false;
+	std::cout << "starts searching for player\n";
+	for (int i = 0; i < rover.rows; ++i) {
+		for (int j = 0; j < rover.cols; ++j) {
+			if (rover.map[i][j].type == '0' || rover.map[i][j].type == '1' || rover.map[i][j].type == '2' || rover.map[i][j].type == '3' || rover.map[i][j].type == '4') {
+				std::cout << "finish search for players found noone\n";
+				if (rover.map[i][j].type != static_cast<char>(rover.id + '0')) {
+					std::cout << "finish search for players " << i << j << "\n";
+					return { i, j };
+				}
+			}
+		}
+	}
+	std::cout << "finish search for players no one found\n";
+	return { -1, -1 };
 }
 
 // TODO
@@ -209,19 +598,21 @@ std::pair<int, int> ore_visible(Rover& rover)
 // please don't ask me about this i have no idea what i'm doing 
 Goal decideOnNextGoal(Rover& rover)
 {
-	if (distance_from_zone(rover) <= 3)
-		Goal::RUN_FROM_ZONE;
+	if (distance_from_zone(rover) <= 2) {
+		return Goal::RUN_FROM_ZONE;
+		std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+	}
 
 	// if there's a player and you're healthy: fight, else run
-	else if (player_visible(rover) && rover.hp >= 10)
+	else if (player_visible(rover).first > 0 && player_visible(rover).second > 0)
 		return Goal::KILL_NEAREST_PLAYER;
-	else if (player_visible(rover))
-		return Goal::RUN_FROM_NEAREST_PLAYER;
+	//else if (player_visible(rover).first > 0 && player_visible(rover).second > 0)
+	//	return Goal::RUN_FROM_NEAREST_PLAYER;
 
 	else if (ore_visible(rover).first > 0 && ore_visible(rover).second > 0)
 		return Goal::MINE_NEAREST_ORE;
 
-	// tweak these 
+	// tweak
 	else if (rover.iron >= 1 && rover.osmium >= 1 && !rover.has_battery)
 		return Goal::RETURN_HOME;
 
@@ -286,7 +677,6 @@ std::vector<std::pair<int, int>> exploreUnexplored(int startX, int startY, Rover
 		std::uniform_int_distribution<int> dist(0, rover.map.size());
 		rover.newrandx = dist(engine);
 		rover.newrandy = dist(engine);
-		std::cout << "\n\n\n\n\n\n\n\n";
 	}
 	std::cout << rover.newrandx << " " << rover.newrandy << std::endl;
 
@@ -306,6 +696,8 @@ int main()
 	// rover
 	Rover rover{ };
 
+	rover.id = id;
+	std::cout << "early\n";
 	// main loop
 	while (true)
 	{
@@ -318,6 +710,7 @@ int main()
 		// if the file is found:
 		if (input)
 		{
+			std::cout << "finds server file\n";
 			std::cout << "Server file (round " << round << ") found!\n";
 
 			// sleep a little to make sure that the file was written to by the server
@@ -465,7 +858,22 @@ int main()
 				break;
 			}
 			case (Goal::KILL_NEAREST_PLAYER): {
+				std::cout << "does this\n";
+				auto [y, x] = player_visible(rover);
+				auto path = findPath(rover.pos_x, rover.pos_y, x, y, rover.map);
+				for (auto pair : path) {
+					std::cout << "x: " << pair.first << " y: " << pair.second << std::endl;
+				}
 
+				for (int i = 1; i <= rover.dig_lvl && i <= path.size(); i++) {
+					Move move = calculateDirection(path.at(i - 1).first, path.at(i - 1).second, path.at(i).first, path.at(i).second);
+					move_cmd += get_movement_command(move);
+				}
+				if (path.size() >= 2) {
+					Move move = calculateDirection(path.at(0).first, path.at(0).second, path.at(1).first, path.at(1).second);
+					action_cmd += "A " + get_movement_command(move);
+				}
+				std::cout << "but doesnt crashes\n";
 				break;
 			}
 			case (Goal::RUN_FROM_NEAREST_PLAYER): {
@@ -473,17 +881,59 @@ int main()
 				break;
 			}
 			case (Goal::RUN_FROM_ZONE): {
+				auto path = findPath(rover.pos_x, rover.pos_y, rover.map.size() / 2, rover.map.size() / 2, rover.map);
+				for (auto& pair : path) {
+					std::cout << "x: " << pair.first << " y: " << pair.second << std::endl;
+				}
 
+				for (int i = 1; i <= rover.dig_lvl && i <= path.size(); i++) {
+					Move move = calculateDirection(path.at(i - 1).first, path.at(i - 1).second, path.at(i).first, path.at(i).second);
+					move_cmd += get_movement_command(move);
+				}
+				if (path.size() >= 2) {
+					Move move = calculateDirection(path.at(0).first, path.at(0).second, path.at(1).first, path.at(1).second);
+					action_cmd += "M " + get_movement_command(move);
+				}
 				break;
 			}
 			case (Goal::RETURN_HOME): {
+				std::random_device seeder;
+				std::mt19937 engine(seeder());
+				std::uniform_int_distribution<int> dist(0, rover.map.size());
+				rover.newrandx = dist(engine);
+				rover.newrandy = dist(engine);
+				auto path = findPath(rover.pos_x, rover.pos_y, rover.spawn_x, rover.spawn_y, rover.map);
+				for (auto pair : path) {
+					std::cout << "x: " << pair.first << " y: " << pair.second << std::endl;
+				}
 
+				for (int i = 1; i <= rover.dig_lvl && i < path.size(); i++) {
+					Move move = calculateDirection(path.at(i - 1).first, path.at(i - 1).second, path.at(i).first, path.at(i).second);
+					move_cmd += get_movement_command(move);
+				}
+				if (path.size() >= 2) {
+					Move move = calculateDirection(path.at(0).first, path.at(0).second, path.at(1).first, path.at(1).second);
+					action_cmd += "M " + get_movement_command(move);
+				}
 				break;
 			}
 			default: {
 				std::cout << "A decision making Error has occured." << std::endl;
 			}
 			}
+
+			// buying
+			// TODO add buying queue
+			if (!rover.has_battery)
+				buy_cmd += "B B";
+			else if (rover.hp <= 10)
+				buy_cmd += "B H";
+			else if (rover.atk_lvl == 1)
+				buy_cmd += "B A";
+			else if (rover.sight_lvl == 1)
+				buy_cmd += "B S";
+
+
 
 			// output string
 			std::string out_cmd = (move_cmd + action_cmd + buy_cmd);
